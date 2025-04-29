@@ -37,14 +37,14 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: "B6cyOE+ZKggkHqWgS67dt6g/esyFFqOdsskQid+GbLo="
+    key: key
   on_client_disconnected:
     then: 
       script.execute: all_off
 
 ota:
   - platform: esphome
-    password: "60faef4cf3ba466be9564e366f4e42c5"
+    password: pwd
 
 wifi:
   ssid: !secret wifi_ssid

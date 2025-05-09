@@ -19,6 +19,7 @@ esphome:
           id: fault_2_state
           state: !lambda 'return id(fault_2).state ? "HIGH" : "LOW";'
       - script.execute: start_routine
+      - script.wait: start_routine
       - script.execute: eco
    
 #       when using driver 3 => uncomment this, enable and the individual pwm controlls (in script)
@@ -40,7 +41,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: "B6cyOE+ZKggkHqWgS67dt6g/esyFFqOdsskQid+GbLo="
+    key:
   reboot_timeout: 0s
   on_client_disconnected:
     then: 
@@ -48,7 +49,7 @@ api:
 
 ota:
   - platform: esphome
-    password: "60faef4cf3ba466be9564e366f4e42c5"
+    password: 
 
 wifi:
   ssid: !secret wifi_ssid
@@ -248,7 +249,7 @@ sensor:
     update_interval: 1s
     lambda: |-
       return 22.0 * id(stroom).state;
-      
+
   - platform: total_daily_energy
     name: "Dagelijks Energieverbruik"
     power_id: vermogen
@@ -441,25 +442,28 @@ script:
   - id: start_routine
     then: 
       - script.execute: all_off
-      - delay: 250ms
+      - script.wait: all_off
       - lambda: |-
           id(pwm_kleur_global_blauw) = 0.21;
       # Voer update uit per kleur over alle drivers
       - script.execute: update_blauw
-      - delay: 500ms
+      - script.wait: update_blauw
       - lambda: |-
           id(pwm_kleur_global_blauw) = 0;
           id(pwm_kleur_global_rood) = 0.21;
       # Voer update uit per kleur over alle drivers
       - script.execute: update_blauw
+      - script.wait: update_blauw
       - script.execute: update_rood
-      - delay: 500ms
+      - script.wait: update_rood
       - lambda: |-
           id(pwm_kleur_global_rood) = 0;
           id(pwm_kleur_global_ver_rood) = 0.21;
       # Voer update uit per kleur over alle drivers
       - script.execute: update_rood
+      - script.wait: update_rood
       - script.execute: update_ver_rood
+      - script.wait: update_ver_rood
       - delay: 500ms
 
   - id: all_off
@@ -587,10 +591,11 @@ script:
   - id: update_kleuren
     then:
       - script.execute: update_blauw
-      - delay: 250ms
+      - script.wait: update_blauw
       - script.execute: update_rood
-      - delay: 250ms
+      - script.wait: update_blauw
       - script.execute: update_ver_rood
+      - script.wait: update_ver_rood
 
   - id: update_blauw
     then:
@@ -599,11 +604,11 @@ script:
           id(pwm_level_2_blauw) = id(pwm_kleur_global_blauw);
           id(pwm_level_3_blauw) = id(pwm_kleur_global_blauw);
       - script.execute: control_pwm_1_blauw
-      - delay: 250ms
+      - script.wait: control_pwm_1_blauw
       - script.execute: control_pwm_2_blauw
-      - delay: 250ms
+      - script.wait: control_pwm_2_blauw
       - script.execute: control_pwm_3_blauw
-      - delay: 100ms
+      - script.wait: control_pwm_3_blauw
       - number.set:
           id: pwm_kleur_slider_blauw
           value: !lambda "return id(pwm_kleur_global_blauw);"
@@ -615,11 +620,11 @@ script:
           id(pwm_level_2_rood) = id(pwm_kleur_global_rood);
           id(pwm_level_3_rood) = id(pwm_kleur_global_rood);
       - script.execute: control_pwm_1_rood
-      - delay: 250ms
+      - script.wait: control_pwm_1_rood
       - script.execute: control_pwm_2_rood
-      - delay: 250ms
+      - script.wait: control_pwm_2_rood
       - script.execute: control_pwm_3_rood
-      - delay: 100ms
+      - script.wait: control_pwm_3_rood
       - number.set:
           id: pwm_kleur_slider_rood
           value: !lambda "return id(pwm_kleur_global_rood);" 
@@ -630,11 +635,11 @@ script:
           id(pwm_level_2_ver_rood) = id(pwm_kleur_global_ver_rood);
           id(pwm_level_3_ver_rood) = id(pwm_kleur_global_ver_rood);
       - script.execute: control_pwm_1_ver_rood
-      - delay: 250ms
+      - script.wait: control_pwm_1_ver_rood
       - script.execute: control_pwm_2_ver_rood
-      - delay: 250ms
+      - script.wait: control_pwm_1_ver_rood
       - script.execute: control_pwm_3_ver_rood
-      - delay: 100ms
+      - script.wait: control_pwm_1_ver_rood
       - number.set:
           id: pwm_kleur_slider_ver_rood
           value: !lambda "return id(pwm_kleur_global_ver_rood);"
@@ -749,7 +754,7 @@ script:
   - id: comfort
     then:
     - script.execute: all_off
-    - delay: 100ms
+    - script.wait: all_off
     - lambda: |-
         id(pwm_kleur_global_blauw) = 0.1;
         id(pwm_kleur_global_rood) = 0.1;
@@ -760,7 +765,7 @@ script:
   - id: optimal_growth
     then:
     - script.execute: all_off
-    - delay: 250ms
+    - script.wait: all_off
     - lambda: |-
         id(pwm_kleur_global_blauw) = 1;
         id(pwm_kleur_global_rood) = 1;
@@ -782,7 +787,7 @@ script:
 #11.52 µmols-1/0.173 = 66.59  m-2s-1 => ver rood 0.75 aan 
     then:
     - script.execute: all_off
-    - delay: 250ms
+    - script.wait: all_off
     - lambda: |-
         id(pwm_kleur_global_rood) = 1;
         id(pwm_kleur_global_blauw) = 0.1705;  // = 0.7 × (0.72 / 7 / 1.01)

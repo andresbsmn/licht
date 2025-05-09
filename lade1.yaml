@@ -506,7 +506,7 @@ script:
       - delay: 250ms
       - script.execute: update_rood
       - delay: 250ms
-      - script.execute: update_ver_roodf
+      - script.execute: update_ver_rood
 
   - id: update_blauw
     then:
@@ -521,8 +521,8 @@ script:
       - script.execute: control_pwm_3_blauw
       - delay: 100ms
       - number.set:
-        id: pwm_kleur_slider_blauw
-        value: !lambda "return id(pwm_kleur_global_blauw);"
+          id: pwm_kleur_slider_blauw
+          value: !lambda "return id(pwm_kleur_global_blauw);"
 
   - id: update_rood
     then:
@@ -537,8 +537,8 @@ script:
       - script.execute: control_pwm_3_rood
       - delay: 100ms
       - number.set:
-        id: pwm_kleur_slider_rood
-        value: !lambda "return id(pwm_kleur_global_rood);" 
+          id: pwm_kleur_slider_rood
+          value: !lambda "return id(pwm_kleur_global_rood);" 
   - id: update_ver_rood
     then:
       - lambda: |-
@@ -552,8 +552,9 @@ script:
       - script.execute: control_pwm_3_ver_rood
       - delay: 100ms
       - number.set:
-        id: pwm_kleur_slider_ver_rood
-        value: !lambda "return id(pwm_kleur_global_ver_rood);"
+          id: pwm_kleur_slider_ver_rood
+          value: !lambda "return id(pwm_kleur_global_ver_rood);"
+        
         
 #control_pwm_X_color
   - id: control_pwm_1_blauw
@@ -720,18 +721,18 @@ script:
       - script.execute: all_off
       - logger.log: "activating night"
       - lambda: |-
-        id(pwm_kleur_global_blauw) = 0.55;
-        id(pwm_kleur_global_rood) = 0.0;
-        id(pwm_kleur_global_ver_rood) = 0.1;
+          id(pwm_kleur_global_blauw) = 0.55;
+          id(pwm_kleur_global_rood) = 0.0;
+          id(pwm_kleur_global_ver_rood) = 0.1;
       - script.execute: update_kleuren
 
   - id: eco
     then:
       - logger.log: "activating eco"
       - lambda: |-
-        id(pwm_kleur_global_blauw) = 0.5;
-        id(pwm_kleur_global_rood) = 0.5;
-        id(pwm_kleur_global_ver_rood) = 0.5;
+          id(pwm_kleur_global_blauw) = 0.5;
+          id(pwm_kleur_global_rood) = 0.5;
+          id(pwm_kleur_global_ver_rood) = 0.5;
       - script.execute: update_kleuren
 
   - id: eco_driver1 #alles half fel laten branden, is wss wel voldoende

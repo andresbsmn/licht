@@ -38,7 +38,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: 
+    key: "Yc/PACRmmGr4Fn6W8mPrROm+EgBeDI8QkbgaWUA75B4="
   reboot_timeout: 0s
   on_client_disconnected:
     then: 
@@ -46,7 +46,7 @@ api:
 
 ota:
   - platform: esphome
-    password: 
+    password: "4898485ae1afca2c94663d21d67161ec"
 
 wifi:
   ssid: !secret wifi_ssid
@@ -519,6 +519,7 @@ script:
       - script.execute: control_pwm_2_blauw
       - delay: 250ms
       - script.execute: control_pwm_3_blauw
+      - delay: 100ms
       - number.set:
         id: pwm_kleur_slider_blauw
         value: !lambda "return id(pwm_kleur_global_blauw);"
@@ -533,7 +534,8 @@ script:
       - delay: 250ms
       - script.execute: control_pwm_2_rood
       - delay: 250ms
-      - script.execute: control_pwm_3_rood   
+      - script.execute: control_pwm_3_rood
+      - delay: 100ms
       - number.set:
         id: pwm_kleur_slider_rood
         value: !lambda "return id(pwm_kleur_global_rood);" 
@@ -548,6 +550,7 @@ script:
       - script.execute: control_pwm_2_ver_rood
       - delay: 250ms
       - script.execute: control_pwm_3_ver_rood
+      - delay: 100ms
       - number.set:
         id: pwm_kleur_slider_ver_rood
         value: !lambda "return id(pwm_kleur_global_ver_rood);"
@@ -715,49 +718,22 @@ script:
   #bij colruyt gezien, blauw licht met een beetje ver rood
     then:
       - script.execute: all_off
-      # Driver 1
-      - logger.log: "Activating Night Preset driver 1"
-      - lambda: "id(pwm_level_1_blauw) = 0.55;"
-      - delay: 250ms
-      - script.execute: control_pwm_1_blauw
-      - lambda: "id(pwm_level_1_rood) = 0.0;"
-      - delay: 250ms
-      - script.execute: control_pwm_1_rood
-      - lambda: "id(pwm_level_1_ver_rood) = 0.1;"
-      - delay: 250ms
-      - script.execute: control_pwm_1_ver_rood
-      # Driver 2
-      - logger.log: "Activating Night Preset driver 2"
-      - lambda: "id(pwm_level_2_blauw) = 0.55;"
-      - delay: 250ms
-      - script.execute: control_pwm_2_blauw
-      - lambda: "id(pwm_level_2_rood) = 0.0;"
-      - delay: 250ms
-      - script.execute: control_pwm_2_rood
-      - lambda: "id(pwm_level_2_ver_rood) = 0.1;"
-      - delay: 250ms
-      - script.execute: control_pwm_2_ver_rood
-      # Driver 3
-      - logger.log: "Activating Night Preset driver 3"
-      - lambda: "id(pwm_level_3_blauw) = 0.55;"
-      - delay: 250ms
-      - script.execute: control_pwm_3_blauw
-      - lambda: "id(pwm_level_3_rood) = 0.0;"
-      - delay: 250ms
-      - script.execute: control_pwm_3_rood
-      - lambda: "id(pwm_level_3_ver_rood) = 0.1;"
-      - delay: 250ms
-      - script.execute: control_pwm_3_ver_rood
+      - logger.log: "activating night"
+      - lambda: |-
+        id(pwm_kleur_global_blauw) = 0.55;
+        id(pwm_kleur_global_rood) = 0.0;
+        id(pwm_kleur_global_ver_rood) = 0.1;
+      - script.execute: update_kleuren
 
   - id: eco
-
     then:
-      - script.execute: eco_driver1
-      - delay: 250ms
-      - script.execute: eco_driver2
-      - delay: 250ms
-      - script.execute: eco_driver3    
-      - delay: 250ms
+      - logger.log: "activating eco"
+      - lambda: |-
+        id(pwm_kleur_global_blauw) = 0.5;
+        id(pwm_kleur_global_rood) = 0.5;
+        id(pwm_kleur_global_ver_rood) = 0.5;
+      - script.execute: update_kleuren
+
   - id: eco_driver1 #alles half fel laten branden, is wss wel voldoende
     then:
       # Driver 1

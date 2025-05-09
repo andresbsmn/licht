@@ -18,6 +18,9 @@ esphome:
       - text_sensor.template.publish:
           id: fault_2_state
           state: !lambda 'return id(fault_2).state ? "HIGH" : "LOW";'
+      - script.execute: start_routine
+      - script.execute: eco
+   
 #       when using driver 3 => uncomment this, enable and the individual pwm controlls (in script)
 #      - text_sensor.template.publish:
 #          id: ledpg_3_state
@@ -37,7 +40,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: 
+    key: "B6cyOE+ZKggkHqWgS67dt6g/esyFFqOdsskQid+GbLo="
   reboot_timeout: 0s
   on_client_disconnected:
     then: 
@@ -45,7 +48,7 @@ api:
 
 ota:
   - platform: esphome
-    password: 
+    password: "60faef4cf3ba466be9564e366f4e42c5"
 
 wifi:
   ssid: !secret wifi_ssid
@@ -65,6 +68,10 @@ captive_portal:
 web_server:
   port: 80
   version: 3
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
 
 output:
 #driver 1
@@ -235,12 +242,21 @@ sensor:
 
   - platform: template
     name: "Vermogen (W)"
+    id: vermogen
     unit_of_measurement: "W"
     accuracy_decimals: 1
     update_interval: 1s
     lambda: |-
       return 22.0 * id(stroom).state;
-
+      
+  - platform: total_daily_energy
+    name: "Dagelijks Energieverbruik"
+    power_id: vermogen
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+    icon: mdi:counter
 
 
 
@@ -269,6 +285,12 @@ text_sensor:
 
 
 binary_sensor:
+
+  - platform: status
+    name: "Licht Lade 2 Status"
+    id: system_status
+    entity_category: "diagnostic"
+
   # Driver 1
   - platform: gpio
     id: ledpg_1
@@ -416,7 +438,30 @@ switch:
     restore_mode: ALWAYS_OFF
 
 script:
-# alles uitzetten.
+  - id: start_routine
+    then: 
+      - script.execute: all_off
+      - delay: 250ms
+      - lambda: |-
+          id(pwm_kleur_global_blauw) = 0.21;
+      # Voer update uit per kleur over alle drivers
+      - script.execute: update_blauw
+      - delay: 500ms
+      - lambda: |-
+          id(pwm_kleur_global_blauw) = 0;
+          id(pwm_kleur_global_rood) = 0.21;
+      # Voer update uit per kleur over alle drivers
+      - script.execute: update_blauw
+      - script.execute: update_rood
+      - delay: 500ms
+      - lambda: |-
+          id(pwm_kleur_global_rood) = 0;
+          id(pwm_kleur_global_ver_rood) = 0.21;
+      # Voer update uit per kleur over alle drivers
+      - script.execute: update_rood
+      - script.execute: update_ver_rood
+      - delay: 500ms
+
   - id: all_off
     then:
       - if:
@@ -454,7 +499,6 @@ script:
       - script.execute: control_pwm_3_blauw
       - script.execute: control_pwm_3_rood
       - script.execute: control_pwm_3_ver_rood
-
 #makes sure enable is turned on after pwm is set high.
   - id: restore_after_fault
     then:
@@ -472,8 +516,7 @@ script:
 
       - logger.log: "Restoring PWM after fault recovery"
       - script.execute: control_pwm
-
-
+#makes sure enable is turned on after pwm is set high.
   - id: handle_fault_or_ledpg_low
     then:
       - logger.log: "Fault or LEDPG LOW detected — resetting PWM"
@@ -548,7 +591,6 @@ script:
       - script.execute: update_rood
       - delay: 250ms
       - script.execute: update_ver_rood
-      
 
   - id: update_blauw
     then:
@@ -561,6 +603,11 @@ script:
       - script.execute: control_pwm_2_blauw
       - delay: 250ms
       - script.execute: control_pwm_3_blauw
+      - delay: 100ms
+      - number.set:
+          id: pwm_kleur_slider_blauw
+          value: !lambda "return id(pwm_kleur_global_blauw);"
+
   - id: update_rood
     then:
       - lambda: |-
@@ -571,7 +618,11 @@ script:
       - delay: 250ms
       - script.execute: control_pwm_2_rood
       - delay: 250ms
-      - script.execute: control_pwm_3_rood    
+      - script.execute: control_pwm_3_rood
+      - delay: 100ms
+      - number.set:
+          id: pwm_kleur_slider_rood
+          value: !lambda "return id(pwm_kleur_global_rood);" 
   - id: update_ver_rood
     then:
       - lambda: |-
@@ -583,7 +634,12 @@ script:
       - script.execute: control_pwm_2_ver_rood
       - delay: 250ms
       - script.execute: control_pwm_3_ver_rood
-
+      - delay: 100ms
+      - number.set:
+          id: pwm_kleur_slider_ver_rood
+          value: !lambda "return id(pwm_kleur_global_ver_rood);"
+        
+        
 #control_pwm_X_color
   - id: control_pwm_1_blauw
     then:
@@ -699,8 +755,8 @@ script:
         id(pwm_kleur_global_rood) = 0.1;
         id(pwm_kleur_global_ver_rood) = 0.1;
     # Voer update uit per kleur over alle drivers
-    - script.execute: update_kleuren
 
+    - script.execute: update_kleuren
   - id: optimal_growth
     then:
     - script.execute: all_off
@@ -747,49 +803,22 @@ script:
   #bij colruyt gezien, blauw licht met een beetje ver rood
     then:
       - script.execute: all_off
-      # Driver 1
-      - logger.log: "Activating Night Preset driver 1"
-      - lambda: "id(pwm_level_1_blauw) = 0.55;"
-      - delay: 250ms
-      - script.execute: control_pwm_1_blauw
-      - lambda: "id(pwm_level_1_rood) = 0.0;"
-      - delay: 250ms
-      - script.execute: control_pwm_1_rood
-      - lambda: "id(pwm_level_1_ver_rood) = 0.1;"
-      - delay: 250ms
-      - script.execute: control_pwm_1_ver_rood
-      # Driver 2
-      - logger.log: "Activating Night Preset driver 2"
-      - lambda: "id(pwm_level_2_blauw) = 0.55;"
-      - delay: 250ms
-      - script.execute: control_pwm_2_blauw
-      - lambda: "id(pwm_level_2_rood) = 0.0;"
-      - delay: 250ms
-      - script.execute: control_pwm_2_rood
-      - lambda: "id(pwm_level_2_ver_rood) = 0.1;"
-      - delay: 250ms
-      - script.execute: control_pwm_2_ver_rood
-      # Driver 3
-      - logger.log: "Activating Night Preset driver 3"
-      - lambda: "id(pwm_level_3_blauw) = 0.55;"
-      - delay: 250ms
-      - script.execute: control_pwm_3_blauw
-      - lambda: "id(pwm_level_3_rood) = 0.0;"
-      - delay: 250ms
-      - script.execute: control_pwm_3_rood
-      - lambda: "id(pwm_level_3_ver_rood) = 0.1;"
-      - delay: 250ms
-      - script.execute: control_pwm_3_ver_rood
+      - logger.log: "activating night"
+      - lambda: |-
+          id(pwm_kleur_global_blauw) = 0.55;
+          id(pwm_kleur_global_rood) = 0.0;
+          id(pwm_kleur_global_ver_rood) = 0.1;
+      - script.execute: update_kleuren
 
   - id: eco
-
     then:
-      - script.execute: eco_driver1
-      - delay: 250ms
-      - script.execute: eco_driver2
-      - delay: 250ms
-      - script.execute: eco_driver3    
-      - delay: 250ms
+      - logger.log: "activating eco"
+      - lambda: |-
+          id(pwm_kleur_global_blauw) = 0.5;
+          id(pwm_kleur_global_rood) = 0.5;
+          id(pwm_kleur_global_ver_rood) = 0.5;
+      - script.execute: update_kleuren
+
   - id: eco_driver1 #alles half fel laten branden, is wss wel voldoende
     then:
       # Driver 1
@@ -1000,12 +1029,18 @@ script:
 
 button:
   - platform: template
+    id: start_routine_button
+    name: "start"
+    on_press:
+      then:
+        - script.execute: start_routine
+
+  - platform: template
     id: comfort_button
     name: "comfort"
     on_press:
       then:
         - script.execute: comfort
-
   - platform: template
     id: all_off_button
     name: "All Off"
@@ -1098,6 +1133,45 @@ button:
         then:
         - script.execute: optimal_growth
 number:
+  - platform: template
+    id: pwm_kleur_slider_blauw
+    name: "Blauw"
+    min_value: 0.0
+    max_value: 1.0
+    step: 0.01
+    optimistic: true
+    restore_value: false
+    on_value:
+      then:
+        - lambda: "id(pwm_kleur_global_blauw) = x;"
+        - script.execute: update_blauw
+
+  - platform: template
+    id: pwm_kleur_slider_rood
+    name: "Rood"
+    min_value: 0.0
+    max_value: 1.0
+    step: 0.01
+    optimistic: true
+    restore_value: false
+    on_value:
+      then:
+        - lambda: "id(pwm_kleur_global_rood) = x;"
+        - script.execute: update_rood
+
+  - platform: template
+    id: pwm_kleur_slider_ver_rood
+    name: "Ver Rood"
+    min_value: 0.0
+    max_value: 1.0
+    step: 0.01
+    optimistic: true
+    restore_value: false
+    on_value:
+      then:
+        - lambda: "id(pwm_kleur_global_ver_rood) = x;"
+        - script.execute: update_ver_rood
+
   - platform: template
     id: pwm_slider_1_blauw
     name: "PWM Output 1 Blue"

@@ -593,7 +593,7 @@ script:
       - script.execute: update_blauw
       - script.wait: update_blauw
       - script.execute: update_rood
-      - script.wait: update_blauw
+      - script.wait: update_rood
       - script.execute: update_ver_rood
       - script.wait: update_ver_rood
 
@@ -637,9 +637,9 @@ script:
       - script.execute: control_pwm_1_ver_rood
       - script.wait: control_pwm_1_ver_rood
       - script.execute: control_pwm_2_ver_rood
-      - script.wait: control_pwm_1_ver_rood
+      - script.wait: control_pwm_2_ver_rood
       - script.execute: control_pwm_3_ver_rood
-      - script.wait: control_pwm_1_ver_rood
+      - script.wait: control_pwm_3_ver_rood
       - number.set:
           id: pwm_kleur_slider_ver_rood
           value: !lambda "return id(pwm_kleur_global_ver_rood);"

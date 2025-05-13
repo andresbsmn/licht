@@ -40,7 +40,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: "Yc/PACRmmGr4Fn6W8mPrROm+EgBeDI8QkbgaWUA75B4="
+    key: 
   reboot_timeout: 0s
   on_client_disconnected:
     then: 
@@ -48,7 +48,7 @@ api:
 
 ota:
   - platform: esphome
-    password: "4898485ae1afca2c94663d21d67161ec"
+    password: 
 
 wifi:
   ssid: !secret wifi_ssid

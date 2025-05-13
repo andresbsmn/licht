@@ -41,7 +41,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key:
+    key: 
   reboot_timeout: 0s
   on_client_disconnected:
     then: 
@@ -49,7 +49,7 @@ api:
 
 ota:
   - platform: esphome
-    password: 
+    password:
 
 wifi:
   ssid: !secret wifi_ssid
@@ -485,10 +485,11 @@ script:
             - delay: 250ms
 
       - lambda: |-
-          id(pwm_level_1_blauw) = 0.0; id(pwm_level_1_rood) = 0.0; id(pwm_level_1_ver_rood) = 0.0;
-          id(pwm_level_2_blauw) = 0.0; id(pwm_level_2_rood) = 0.0; id(pwm_level_2_ver_rood) = 0.0;
-          id(pwm_level_3_blauw) = 0.0; id(pwm_level_3_rood) = 0.0; id(pwm_level_3_ver_rood) = 0.0;
-      - script.execute: control_pwm
+          id(pwm_kleur_global_blauw) = 0.0;
+          id(pwm_kleur_global_rood) = 0.0;
+          id(pwm_kleur_global_ver_rood) = 0.0;
+      # Voer update uit per kleur over alle drivers
+      - script.execute: update_kleuren
 
 #call all control_pwm_X_color scripts
   - id: control_pwm
@@ -753,8 +754,6 @@ script:
 #presets
   - id: comfort
     then:
-    - script.execute: all_off
-    - script.wait: all_off
     - lambda: |-
         id(pwm_kleur_global_blauw) = 0.1;
         id(pwm_kleur_global_rood) = 0.1;
@@ -764,8 +763,6 @@ script:
     - script.execute: update_kleuren
   - id: optimal_growth
     then:
-    - script.execute: all_off
-    - script.wait: all_off
     - lambda: |-
         id(pwm_kleur_global_blauw) = 1;
         id(pwm_kleur_global_rood) = 1;
@@ -807,7 +804,6 @@ script:
   - id: night 
   #bij colruyt gezien, blauw licht met een beetje ver rood
     then:
-      - script.execute: all_off
       - logger.log: "activating night"
       - lambda: |-
           id(pwm_kleur_global_blauw) = 0.55;
